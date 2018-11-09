@@ -1,0 +1,11 @@
+# Ignore compiled executable
+pr2
+
+# Ignore the compilation database file used for youcompleteme code completion in vim
+compile_commands.json
+
+# Ignore YouCompleteMe compilation flags config file
+.ycm_extra_conf.py
+
+# Ignore swap files
+*.swp

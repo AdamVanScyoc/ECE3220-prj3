@@ -22,10 +22,12 @@ int sobel_y[3][3] = { { 1, 2, 1},
                       {-1,-2,-1}};
 
 /// Declaration of functions.
-void* findEdge(const unsigned int w, const unsigned int h);
+void* findEdge(const unsigned int w, const unsigned int h,
+        const unsigned int startx, const unsigned int starty);
 
 /// Memory to hold input image data
 unsigned char* inData;
+unsigned char* outData;
 std::vector<unsigned char> image_sobeled;
 
 // Qt entry point!
@@ -80,8 +82,9 @@ int main(int argc, char *argv[])
                  ysize = 0, // size of square (in pixels) in vertical direction
                  xsize = 0; // size of square (in pixels) in horiz. direction
     //unsigned char curSquare[500][500];
-    unsigned char * curSquare = malloc(sizeof(unsigned char)*500*500);
-    if (numSquares > 1)
+    //unsigned char * curSquare = malloc(sizeof(unsigned char)*500*500);
+    unsigned char * curSquare = new unsigned char [500*500];
+    if (numSquares >= 1)
     {
         // Iterate through squares in Y-direction
         for (unsigned int sy = 0; sy < (unsigned int)ceil((double)(image->bmpHeight/500)); sy++)
@@ -90,7 +93,7 @@ int main(int argc, char *argv[])
             for (unsigned int sx = 0; sx < (unsigned int)ceil((double)(image->bmpWidth/500)); sx++)
             {
                 // Zero out temporary current square array
-                curSquare = memset(&curSquare, 0, 500*500);
+                curSquare = memset(&curSquare[0], 0, 500*500);
 
                 // Iterate row-by-row through the current square
                 ysize = ((image->bmpHeight - sy*500) >= 500 ? 500 : image->bmpHeight % 500);
@@ -100,25 +103,21 @@ int main(int argc, char *argv[])
                     xsize =  ((image->bmpWidth - sx*500) >= 500 ? 500 : image->bmpWidth % 500);
                     for (ox = sx*500, csx = 0; ox < xsize; ox++, csx++)
                     {
-                        curSquare[csy*csx] = data[oy*ox - 1];
+                        curSquare[csy*csx] = data[oy*ox];
                     }
-
-                    // TODO implement with a new thread from the thread pool
-                    // (which is numThreads in size)
-                    //inData = &curSquare;
-                    inData = memcpy(&inData, &curSquare, 500*500);
-                    findEdge(xsize, ysize);
-
-                    // Clear out inData before next call
-                    inData = memset(&inData, 0, 500*500);
-                        
-
                 }
+
+                inData = memcpy(&inData[0], &curSquare[0], 500*500);
+
+                // TODO implement with a new thread from the thread pool
+                // (which is numThreads in size)
+                findEdge(xsize, ysize, 0/*sx*500*/, 0/*sy*500*/);
             }
         }
 
     }
-    free(curSquare);
+    delete[] curSquare;
+    //free(curSquare);
 
 
 
@@ -127,28 +126,39 @@ int main(int argc, char *argv[])
     /// Write image data passed as argument to a bitmap file
     image->writeGrayBmp(&image_sobeled[0]);
     image_sobeled.clear();
-    delete data;
+    delete[] data;
 
     return 0;
     //return a.exec();
 }
 
 
+// TODO make findEdge work on an arbitrary tile of a larger image
+// TODO make findEdge thread-safe
 /// Function that implements Sobel operator.
 /// Returns image data after applying Sobel operator to the original image.
 /// Reimplement findEdge such that it will run in a single thread
 /// and can process on a region/group of pixels
 void* findEdge(const unsigned int w, // Total width of image
-	       const unsigned int h) // Total height of image
+	       const unsigned int h, // Total height of image
+           const unsigned int startx, // x-offset from which to start
+           const unsigned int starty) // y-offset from which to start
 {
     int gradient_X = 0;
     int gradient_Y = 0;
     int value = 0;
 
+    // TODO need to make this thread safe; possibly by changing the global
+    // variable inData and/or image_sobeled to a protected member variable of a class
+    // that implements thread-safety
+    
     // The FOR loop apply Sobel operator
     // to bitmap image data in per-pixel level.
+
     for(unsigned int y = 1; y < h-1; ++y)
         for(unsigned int x = 1; x < w-1; ++x)
+//for(unsigned int y = 1; y < h-1; ++y)
+    //    for(unsigned int x = 1; x < w-1; ++x)
         {
             // Compute gradient in +ve x direction
             gradient_X = sobel_x[0][0] * inData[ (x-1) + (y-1) * w ]
@@ -174,7 +184,10 @@ void* findEdge(const unsigned int w, // Total width of image
 
             value = (int)ceil(sqrt( gradient_X * gradient_X +
                                     gradient_Y * gradient_Y));
-            image_sobeled[ x + y*w ] = 255 - value;
+            // offset the x and y coordinates of the pixels that were being sobeled
+            // with the supplied offset so that we can stitch together the tiles 
+            // in the final image
+            image_sobeled[ (startx + x) + (starty + y)*w ] = 255 - value;
         }
     // Visual Studio requires this to be present; and should not 
     // cause issues for other compilers. 

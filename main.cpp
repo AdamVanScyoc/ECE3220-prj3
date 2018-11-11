@@ -11,6 +11,7 @@
 #include "cscbitmap.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int sobel_x[3][3] = { { 1, 0,-1},
                       { 2, 0,-2},
@@ -21,7 +22,7 @@ int sobel_y[3][3] = { { 1, 2, 1},
                       {-1,-2,-1}};
 
 /// Declaration of functions.
-void* findEdge(const unsigned int w, const unsigned int h, const unsigned int n);
+void* findEdge(const unsigned int w, const unsigned int h);
 
 /// Memory to hold input image data
 unsigned char* inData;
@@ -36,6 +37,7 @@ int main(int argc, char *argv[])
     //QCoreApplication a(argc, argv);
     int numThreads = 1; // TODO As-is, this expects that the 2nd argument will always
                         // be the thread count (not the filename). It does no error checking
+    int numSquares = 1;
     char* bmpFile;
     if( argc < 3)
       {
@@ -44,8 +46,8 @@ int main(int argc, char *argv[])
       }
     else
     {
-      bmpFile = argv[2]; 
-      numThreads = atoi(argv[1]);
+      bmpFile = argv[1]; 
+      numThreads = atoi(argv[2]);
     }
     
     /// Open and read bmp file.
@@ -56,7 +58,71 @@ int main(int argc, char *argv[])
     image_sobeled.resize(image->bmpSize, 255);
     inData = data;
 
-    findEdge(image->bmpWidth, image->bmpHeight, numThreads);
+    // TODO [notes from Adam] add logic here to divide the image into AT LEAST n squares*, and pass off 
+    // the application of the Sobel Operator to a worker thread for each.
+    // Use thread-safe operations like locks on the data in each square
+    //
+    // *the best way to go about this would be to divide the image into some even-square
+    // number of squares (i.e. 1, 4, 9, 16, ...). If for example, the number of threads requested was 5,
+    // divide the image into 9 squares by dividing the width into 3 segments, and the heigth into 3 segments
+   
+    // Compute the smallest perfect square that is as-large-as, or just larger than, 
+    // the number of requested threads.
+    numSquares = (int)pow(ceil(sqrt((double)numThreads)), 2);
+
+    // TODO need condition variables for the threads in the thread pool that are 
+    // either available or in use.
+    // Divide image into 500x500 pixel squares
+    unsigned int csx = 0, // x coordinate of current square
+                 csy = 0, // y coord of current square
+                 ox = 0, // x coordinate of overall image - including offset of last tile
+                 oy = 0, // y " "
+                 ysize = 0, // size of square (in pixels) in vertical direction
+                 xsize = 0; // size of square (in pixels) in horiz. direction
+    //unsigned char curSquare[500][500];
+    unsigned char * curSquare = malloc(sizeof(unsigned char)*500*500);
+    if (numSquares > 1)
+    {
+        // Iterate through squares in Y-direction
+        for (unsigned int sy = 0; sy < (unsigned int)ceil((double)(image->bmpHeight/500)); sy++)
+        {
+            // Iterate through squares in X-direction
+            for (unsigned int sx = 0; sx < (unsigned int)ceil((double)(image->bmpWidth/500)); sx++)
+            {
+                // Zero out temporary current square array
+                curSquare = memset(&curSquare, 0, 500*500);
+
+                // Iterate row-by-row through the current square
+                ysize = ((image->bmpHeight - sy*500) >= 500 ? 500 : image->bmpHeight % 500);
+                for (oy = sy*500, csy = 0; oy < ysize; oy++, csy++)
+                {
+                    // Iterate pixel-by-pixel for the current row
+                    xsize =  ((image->bmpWidth - sx*500) >= 500 ? 500 : image->bmpWidth % 500);
+                    for (ox = sx*500, csx = 0; ox < xsize; ox++, csx++)
+                    {
+                        curSquare[csy*csx] = data[oy*ox - 1];
+                    }
+
+                    // TODO implement with a new thread from the thread pool
+                    // (which is numThreads in size)
+                    //inData = &curSquare;
+                    inData = memcpy(&inData, &curSquare, 500*500);
+                    findEdge(xsize, ysize);
+
+                    // Clear out inData before next call
+                    inData = memset(&inData, 0, 500*500);
+                        
+
+                }
+            }
+        }
+
+    }
+    free(curSquare);
+
+
+
+    //findEdge(image->bmpWidth, image->bmpHeight, numThreads);
 
     /// Write image data passed as argument to a bitmap file
     image->writeGrayBmp(&image_sobeled[0]);
@@ -73,26 +139,11 @@ int main(int argc, char *argv[])
 /// Reimplement findEdge such that it will run in a single thread
 /// and can process on a region/group of pixels
 void* findEdge(const unsigned int w, // Total width of image
-	       const unsigned int h, // Total height of image
-           const unsigned int n) // Number of threads to use
+	       const unsigned int h) // Total height of image
 {
-    int numSquares = 1;
     int gradient_X = 0;
     int gradient_Y = 0;
     int value = 0;
-
-    // TODO [notes from Adam] add logic here to divide the image into AT LEAST n squares*, and pass off 
-    // the application of the Sobel Operator to a worker thread for each.
-    // Use thread-safe operations like locks on the data in each square
-    //
-    // *the best way to go about this would be to divide the image into some even-square
-    // number of squares (i.e. 1, 4, 9, 16, ...). If for example, the number of threads requested was 5,
-    // divide the image into 9 squares by dividing the width into 3 segments, and the heigth into 3 segments
-   
-    // Compute the smallest perfect square that is as-large-as, or just larger than, 
-    // the number of requested threads.
-    numSquares = (int)pow(ceil(sqrt((double)n)), 2);
-
 
     // The FOR loop apply Sobel operator
     // to bitmap image data in per-pixel level.

@@ -42,14 +42,14 @@ int main(int argc, char *argv[])
     int numSquares = 1;
     char* bmpFile;
     if( argc < 3)
-      {
-	printf("Filename and Thread Count arguments required!\n");
-	return 0;
-      }
+    {
+        printf("Filename and Thread Count arguments required!\n");
+        return 0;
+    }
     else
     {
-      bmpFile = argv[1]; 
-      numThreads = atoi(argv[2]);
+        bmpFile = argv[1]; 
+        numThreads = atoi(argv[2]);
     }
     
     /// Open and read bmp file.
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
     image_sobeled.resize(image->bmpSize, 255);
     inData = data;
 
+    /*
     // TODO [notes from Adam] add logic here to divide the image into AT LEAST n squares*, and pass off 
     // the application of the Sobel Operator to a worker thread for each.
     // Use thread-safe operations like locks on the data in each square
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
 
                 // TODO implement with a new thread from the thread pool
                 // (which is numThreads in size)
-                findEdge(xsize, ysize, 0/*sx*500*/, 0/*sy*500*/);
+                //findEdge(xsize, ysize, sx*500, sy*500);
             }
         }
 
@@ -119,11 +120,12 @@ int main(int argc, char *argv[])
     delete[] curSquare;
     //free(curSquare);
 
+    */
 
 
-    //findEdge(image->bmpWidth, image->bmpHeight, numThreads);
-
-    /// Write image data passed as argument to a bitmap file
+    findEdge(image->bmpWidth, image->bmpHeight, 0, 0);
+    
+    // Write image data passed as argument to a bitmap file
     image->writeGrayBmp(&image_sobeled[0]);
     image_sobeled.clear();
     delete[] data;
@@ -152,13 +154,21 @@ void* findEdge(const unsigned int w, // Total width of image
     // variable inData and/or image_sobeled to a protected member variable of a class
     // that implements thread-safety
     
+    // clear out the section of the image that we are about to sobel
+   for (int y = starty; y < starty + h; ++y)
+      for (int x = startx; x < startx + w; ++x)
+      {
+        //image_sobeled[x + y*w] = 0;
+      } 
+   
+    
     // The FOR loop apply Sobel operator
     // to bitmap image data in per-pixel level.
 
-    for(unsigned int y = 1; y < h-1; ++y)
-        for(unsigned int x = 1; x < w-1; ++x)
-//for(unsigned int y = 1; y < h-1; ++y)
-    //    for(unsigned int x = 1; x < w-1; ++x)
+    for(unsigned int y = starty + 1; y < starty + h-1; ++y)
+        for(unsigned int x = startx + 1; x < startx + w-1; ++x)
+//    for(unsigned int y = 1; y < h-1; ++y)
+//        for(unsigned int x = 1; x < w-1; ++x)
         {
             // Compute gradient in +ve x direction
             gradient_X = sobel_x[0][0] * inData[ (x-1) + (y-1) * w ]
@@ -187,7 +197,7 @@ void* findEdge(const unsigned int w, // Total width of image
             // offset the x and y coordinates of the pixels that were being sobeled
             // with the supplied offset so that we can stitch together the tiles 
             // in the final image
-            image_sobeled[ (startx + x) + (starty + y)*w ] = 255 - value;
+            image_sobeled[ x + y*w ] = 255 - value;
         }
     // Visual Studio requires this to be present; and should not 
     // cause issues for other compilers. 

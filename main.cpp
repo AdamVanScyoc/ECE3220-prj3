@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
     // Create vector of numSquares number of tiles.
     std::vector<class Tile> tiles;
-    for (unsigned int yy = 0, index = 0; yy  < (int)sqrt(numSquares); yy++)
+    for (unsigned int yy = 0, index = 0; yy  < (unsigned int)sqrt(numSquares); yy++)
     {
         for (unsigned int xx = 0; xx < (unsigned int)sqrt(numSquares); xx++)
         {
@@ -104,67 +104,6 @@ int main(int argc, char *argv[])
                 }
         }
     }
-
-
-    /*
-    // TODO [notes from Adam] add logic here to divide the image into AT LEAST n squares*, and pass off 
-    // the application of the Sobel Operator to a worker thread for each.
-    // Use thread-safe operations like locks on the data in each square
-    //
-    // *the best way to go about this would be to divide the image into some even-square
-    // number of squares (i.e. 1, 4, 9, 16, ...). If for example, the number of threads requested was 5,
-    // divide the image into 9 squares by dividing the width into 3 segments, and the heigth into 3 segments
-   
-
-    // TODO need condition variables for the threads in the thread pool that are 
-    // either available or in use.
-    // Divide image into 500x500 pixel squares
-    unsigned int csx = 0, // x coordinate of current square
-                 csy = 0, // y coord of current square
-                 ox = 0, // x coordinate of overall image - including offset of last tile
-                 oy = 0, // y " "
-                 yize = 0, // size of square (in pixels) in vertical direction
-                 xsize = 0; // size of square (in pixels) in horiz. direction
-    //unsigned char curSquare[500][500];
-    //unsigned char * curSquare = malloc(sizeof(unsigned char)*500*500);
-    unsigned char * curSquare = new unsigned char [500*500];
-    if (numSquares >= 1)
-    {
-        // Iterate through squares in Y-direction
-        for (unsigned int sy = 0; sy < (unsigned int)ceil((double)(image->bmpHeight/500)); sy++)
-        {
-            // Iterate through squares in X-direction
-            for (unsigned int sx = 0; sx < (unsigned int)ceil((double)(image->bmpWidth/500)); sx++)
-            {
-                // Zero out temporary current square array
-                curSquare = memset(&curSquare[0], 0, 500*500);
-
-                // Iterate row-by-row through the current square
-                ysize = ((image->bmpHeight - sy*500) >= 500 ? 500 : image->bmpHeight % 500);
-                for (oy = sy*500, csy = 0; oy < ysize; oy++, csy++)
-                {
-                    // Iterate pixel-by-pixel for the current row
-                    xsize =  ((image->bmpWidth - sx*500) >= 500 ? 500 : image->bmpWidth % 500);
-                    for (ox = sx*500, csx = 0; ox < xsize; ox++, csx++)
-                    {
-                        curSquare[csy*csx] = data[oy*ox];
-                    }
-                }
-
-                inData = memcpy(&inData[0], &curSquare[0], 500*500);
-
-                // TODO implement with a new thread from the thread pool
-                // (which is numThreads in size)
-                //findEdge(xsize, ysize, sx*500, sy*500);
-            }
-        }
-
-    }
-    delete[] curSquare;
-    //free(curSquare);
-
-    */
-
 
     //findEdge(image->bmpWidth, image->bmpHeight);
     

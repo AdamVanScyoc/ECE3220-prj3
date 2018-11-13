@@ -25,7 +25,12 @@ int sobel_y[3][3] = { { 1, 2, 1},
                       {-1,-2,-1}};
 
 /// Declaration of functions.
-void* findEdge(const unsigned int w, const unsigned int h);
+void* findEdge(const unsigned int w, // Total width of image
+                const unsigned int h, // Total height of image
+                const unsigned int x, // x starting point 
+                const unsigned int y, // y starting point
+                std::vector<unsigned char> image_unsobeled,
+                std::vector<unsigned char> image_sobeled);
 
 /// Memory to hold input image data
 unsigned char* inData;
@@ -70,9 +75,9 @@ int main(int argc, char *argv[])
 
     // Create vector of numSquares number of tiles.
     std::vector<class Tile> tiles;
-    for (int yy = 0, index = 0; yy  < (int)sqrt(numSquares); yy++)
+    for (unsigned int yy = 0, index = 0; yy  < (int)sqrt(numSquares); yy++)
     {
-        for (int xx = 0; xx < (int)sqrt(numSquares); xx++)
+        for (unsigned int xx = 0; xx < (unsigned int)sqrt(numSquares); xx++)
         {
 
             // Create vector element representing the current tile.
@@ -85,9 +90,7 @@ int main(int argc, char *argv[])
             unsigned int csx = 0, // x coordinate of current square
                      csy = 0, // y coord of current square
                      ox = 0, // x coordinate of overall image - including offset of last tile
-                     oy = 0, // y " "
-                     ysize = 0, // size of square (in pixels) in vertical direction
-                     xsize = 0; // size of square (in pixels) in horiz. direction
+                     oy = 0; // y " "
 
             // Iterate through each pixel of this subsection of the main image.
             for (csy = yy*500, oy = 0; csy < yy*500 + 500; csy++, oy++)   // TODO this may segfault if final tile is less than 500 pixels tall
@@ -96,7 +99,8 @@ int main(int argc, char *argv[])
                     tiles[index].image_unsobeled[ox*oy] = inData[csy*image->bmpWidth + csx];
                     // TODO call to findEdge w/ multithreading here
                     // TODO modify findEdge to accept a vector of pixels (i.e. image_sobeled) as argument)
-                    //findEdge(
+                   findEdge(tiles[index].w, tiles[index].h, tiles[index].x, tiles[index].y,
+                           tiles[index].image_unsobeled, tiles[index].image_sobeled);
                 }
         }
     }
@@ -119,7 +123,7 @@ int main(int argc, char *argv[])
                  csy = 0, // y coord of current square
                  ox = 0, // x coordinate of overall image - including offset of last tile
                  oy = 0, // y " "
-                 ysize = 0, // size of square (in pixels) in vertical direction
+                 yize = 0, // size of square (in pixels) in vertical direction
                  xsize = 0; // size of square (in pixels) in horiz. direction
     //unsigned char curSquare[500][500];
     //unsigned char * curSquare = malloc(sizeof(unsigned char)*500*500);
@@ -162,7 +166,7 @@ int main(int argc, char *argv[])
     */
 
 
-    findEdge(image->bmpWidth, image->bmpHeight);
+    //findEdge(image->bmpWidth, image->bmpHeight);
     
     // Write image data passed as argument to a bitmap file
     image->writeGrayBmp(&image_sobeled[0]);
@@ -181,7 +185,11 @@ int main(int argc, char *argv[])
 /// Reimplement findEdge such that it will run in a single thread
 /// and can process on a region/group of pixels
 void* findEdge(const unsigned int w, // Total width of image
-                const unsigned int h) // Total height of image
+                const unsigned int h, // Total height of image
+                const unsigned int x,
+                const unsigned int y,
+                std::vector<unsigned char> image_unsobeled,
+                std::vector<unsigned char> image_sobeled)
 {
     int gradient_X = 0;
     int gradient_Y = 0;

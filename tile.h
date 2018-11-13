@@ -13,12 +13,12 @@ class Tile
         void * findEdge();
         std::vector<unsigned char> image_unsobeled;  // Store pixels to-be sobeled.
         std::vector<unsigned char> image_sobeled;  // Stores final, sobeled pixels
-
-    private:
         unsigned int w, h;
         unsigned int x, // x coordinate of this tile relative to whole image
                      y, // y coord " "
                      size; // number of pixels in image
+
+    private:
         unsigned char * inData;
 };
 

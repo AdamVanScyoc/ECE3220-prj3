@@ -31,11 +31,6 @@ void* findEdge(const unsigned int w, // Total width of image
                 unsigned char * imageData,
                 unsigned char * imageDataSobeled);
 
-/// Memory to hold input image data
-unsigned char* inData;
-unsigned char* outData;
-std::vector<unsigned char> image_sobeled;
-
 // Qt entry point!
 // Create and run a thread inside main function.
 // Also assign region of image to a thread, and 
@@ -60,12 +55,9 @@ int main(int argc, char *argv[])
     /// Open and read bmp file.
     Bitmap *image = new Bitmap();
     unsigned char*data = image->readGrayBitmap(bmpFile);
+    // Memory to hold output image data
+    unsigned char* outData = new unsigned char[image->bmpSize];
 
-    image_sobeled.clear();
-    image_sobeled.resize(image->bmpSize, 255);
-
-
-    inData = data;
 
     std::vector<class Tile> tiles;
 
@@ -82,27 +74,30 @@ int main(int argc, char *argv[])
             // Iterate through each line of this subsection of the main image.
             for (csy = 0; csy < tiles[index].h; csy++)
             {
-                memcpy(&(tiles[index].image_unsobeled[csy*640]), &inData[csy*640], 640);
+                // TODO change 640
+                memcpy(&(tiles[index].image_unsobeled[csy*640]), &data[csy*640], 640);
                
             }
           
            // TODO call to findEdge w/ multithreading here
            // TODO modify findEdge to accept a vector of pixels (i.e. image_sobeled) as argument)
-           //tiles[index].image_sobeled.clear();
+           tiles[index].image_sobeled = (unsigned char *)memset(&tiles[index].image_sobeled[0], 0, tiles[index].size);
            findEdge(tiles[index].w, tiles[index].h, tiles[index].y,
                    &tiles[index].image_unsobeled[0], &tiles[index].image_sobeled[0]);
 
-            // Write image data passed as argument to a bitmap file
-           image->writeGrayBmp(&tiles[index].image_sobeled[0]);
-           //image->writeGrayBmp(&image_unsobeled[0]);
+           // Add sobeled horizontal slice to the main output image
+           outData = (unsigned char *) memcpy(&outData[(tiles[index].y - 0) * tiles[index].h * tiles[index].w], &tiles[index].image_sobeled[0], tiles[index].h*tiles[index].w);
+
     }
 
-    //findEdge(image->bmpWidth, image->bmpHeight);
-    
-    //image->writeGrayBmp(&image_unsobeled[0]);
+    for (unsigned int index = 0; index < numThreads; index++)
+    {
+        // Stitch horizontal slices together
+        // Write image data passed as argument to a bitmap file
+        image->writeGrayBmp(tiles[index].image_sobeled);
+    }
 
     return 0;
-    //return a.exec();
 }
 
 

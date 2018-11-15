@@ -11,8 +11,10 @@ class Tile
         // TODO
         // ~Tile(); if necessary to free allocated memory (image_sobeled[] ?)
         void * findEdge();
-        std::vector<unsigned char> image_unsobeled;  // Store pixels to-be sobeled.
-        std::vector<unsigned char> image_sobeled;  // Stores final, sobeled pixels
+        //std::vector<unsigned char> image_unsobeled;  // Store pixels to-be sobeled.
+        //std::vector<unsigned char> image_sobeled;  // Stores final, sobeled pixels
+        unsigned char * image_sobeled,
+                      * image_unsobeled;
         unsigned int w, h;
         unsigned int x, // x coordinate of this tile relative to whole image
                      y, // y coord " "

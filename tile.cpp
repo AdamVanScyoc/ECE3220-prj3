@@ -10,6 +10,7 @@ Tile::Tile(unsigned int w, unsigned int h, unsigned int x, unsigned int y)
     
     // Resize vector to store the pixels in this tile.
 
-    Tile::image_sobeled.resize( Tile::size, 255);
-    Tile::image_unsobeled.resize( Tile::size, 255);
+    Tile::image_sobeled = new unsigned char[Tile::size];
+
+    Tile::image_unsobeled = new unsigned char[Tile::size];
 }

@@ -1,10 +1,9 @@
 #include "tile.h"
 
-Tile::Tile(unsigned int w, unsigned int h, unsigned int x, unsigned int y)
+Tile::Tile(unsigned int w, unsigned int h, unsigned int y)
 {
     Tile::w = w;
     Tile::h = h;
-    Tile::x = x;
     Tile::y = y;
     Tile::size = w*h;
     

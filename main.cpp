@@ -27,12 +27,9 @@ int sobel_y[3][3] = { { 1, 2, 1},
 /// Declaration of functions.
 void* findEdge(const unsigned int w, // Total width of image
                 const unsigned int h, // Total height of image
-                const unsigned int x, // x starting point 
                 const unsigned int y, // y starting point
                 unsigned char * imageData,
                 unsigned char * imageDataSobeled);
-                //std::vector<unsigned char> image_unsobeled,
-                //std::vector<unsigned char> image_sobeled);
 
 /// Memory to hold input image data
 unsigned char* inData;
@@ -46,9 +43,8 @@ std::vector<unsigned char> image_sobeled;
 int main(int argc, char *argv[])
 {
     //QCoreApplication a(argc, argv);
-    int numThreads = 1; // TODO As-is, this expects that the 2nd argument will always
+    unsigned int numThreads = 1; // TODO As-is, this expects that the 2nd argument will always
                         // be the thread count (not the filename). It does no error checking
-    int numSquares = 1;
     char* bmpFile;
     if( argc < 3)
     {
@@ -71,71 +67,34 @@ int main(int argc, char *argv[])
 
     inData = data;
 
-    // Compute the smallest perfect square that is as-large-as, or just larger than, 
-    // the number of requested threads.
-    numSquares = (int)pow(ceil(sqrt((double)numThreads)), 2);
-
-    // Create vector of numSquares number of tiles.
     std::vector<class Tile> tiles;
 
-    unsigned char * image_unsobeled = new unsigned char[640*625];
-
-    for (unsigned int yy = 0, index = 0; yy  < 1/*(unsigned int)sqrt(numSquares)*/; yy++, index++)
+    for (unsigned int yy = 0, index = 0; yy  < numThreads; yy++, index++)
     {
-        for (unsigned int xx = 0; xx < 1/*(unsigned int)sqrt(numSquares)*/; xx++)
-        {
-
             // Create vector element representing the current tile.
-           tiles.emplace_back((int)ceil((double)(image->bmpWidth / (int)sqrt(numSquares))),
-                                  (int)ceil((double)(image->bmpHeight / (int)sqrt(numSquares))),
-                                  xx, yy);
-           tiles[index] = Tile(640, 625, xx, yy);
+           tiles.emplace_back(image->bmpWidth,
+                                  (int)ceil((double)(image->bmpHeight / (int)numThreads)),
+                                  yy);
 
             // Copy pixels from this subsection of the main image to this tile.
-            // Divide image into 500x500 pixel squares
-            unsigned int csx = 0, // x coordinate of current square
-                     csy = 0, // y coord of current square
-                     ox = 0, // x coordinate of overall image - including offset of last tile
-                     oy = 0; // y " "
+            unsigned int csy = 0; // y coord of current square
 
-            // Iterate through each pixel of this subsection of the main image.
-            for (csy = 0; csy < 500; csy++)
+            // Iterate through each line of this subsection of the main image.
+            for (csy = 0; csy < tiles[index].h; csy++)
             {
-               //memcpy(&(tiles[index].image_unsobeled[csy*500]), &inData[csy*image->bmpWidth], 500);
-                //memcpy(&image_unsobeled[csy*640], &inData[csy*640], 640);
                 memcpy(&(tiles[index].image_unsobeled[csy*640]), &inData[csy*640], 640);
                
             }
-            /*
-            for (csy = yy*500, oy = 0; csy < yy*500 + 500; csy++, oy++)   // TODO this may segfault if final tile is less than 500 pixels tall
-                // Copy sub-section of image line-by-line
-               memcpy(&tiles[index].image_unsobeled[oy], &inData[csy], 500);
-
-
-
-                for (csx = xx*500, ox = 0; csx < xx*500 + 500; csx++, ox++) // TODO this may segfault if final tile is less than 500 pixels wide
-                {
-                    // ox is the pixel x-coord relative to the tile
-                    // csx is the pixel y-coord relative to the whole image
-                    tiles[index].image_unsobeled[ox + oy*500] = inData[csy*image->bmpWidth + csx];
-                }
-
-
-
-
-            */
-
-           
+          
            // TODO call to findEdge w/ multithreading here
            // TODO modify findEdge to accept a vector of pixels (i.e. image_sobeled) as argument)
            //tiles[index].image_sobeled.clear();
-           //findEdge(tiles[index].w, tiles[index].h, tiles[index].x, tiles[index].y,
-           //        &tiles[index].image_unsobeled[0], &tiles[index].image_sobeled[0]);
+           findEdge(tiles[index].w, tiles[index].h, tiles[index].y,
+                   &tiles[index].image_unsobeled[0], &tiles[index].image_sobeled[0]);
 
             // Write image data passed as argument to a bitmap file
-           image->writeGrayBmp(&tiles[index].image_unsobeled[0]);
+           image->writeGrayBmp(&tiles[index].image_sobeled[0]);
            //image->writeGrayBmp(&image_unsobeled[0]);
-        }
     }
 
     //findEdge(image->bmpWidth, image->bmpHeight);
@@ -155,7 +114,6 @@ int main(int argc, char *argv[])
 /// and can process on a region/group of pixels
 void* findEdge(const unsigned int w, // Total width of image
                 const unsigned int h, // Total height of image
-                const unsigned int x,
                 const unsigned int y,
                 unsigned char * imageData,
                 unsigned char * imageDataSobeled)

@@ -7,7 +7,7 @@
 class Tile
 {
     public:
-        Tile(unsigned int w, unsigned int h, unsigned int x, unsigned int y);
+        Tile(unsigned int w, unsigned int h, unsigned int y);
         // TODO
         // ~Tile(); if necessary to free allocated memory (image_sobeled[] ?)
         void * findEdge();
@@ -16,8 +16,7 @@ class Tile
         unsigned char * image_sobeled,
                       * image_unsobeled;
         unsigned int w, h;
-        unsigned int x, // x coordinate of this tile relative to whole image
-                     y, // y coord " "
+        unsigned int y, // y coord " "
                      size; // number of pixels in image
 
     private:

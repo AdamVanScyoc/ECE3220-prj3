@@ -13,7 +13,7 @@ public:
     unsigned int bmpSize;
 
     unsigned char* readGrayBitmap(const char*file);
-    void writeGrayBmp(unsigned char* data);
+    void writeGrayBmp(unsigned char* data, const char* filename);
 
 private:
     unsigned char* bmpHeader;

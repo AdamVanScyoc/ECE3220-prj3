@@ -72,8 +72,9 @@ int main(int argc, char *argv[])
 		start = std::clock();
 		std::string filename;
 		std::ifstream ifs(inFile);
-		while(getline(ifs, filename)){
-			processImage(filename.c_str(),1)
+		std::thread t[numThreads];
+		while (getline(ifs, filename)) {
+			processImage(filename.c_str(), numThreads);
 		}
 		end = std::clock();
 		duration = (end - start) / (double)CLOCKS_PER_SEC;

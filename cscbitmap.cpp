@@ -50,7 +50,7 @@ unsigned char* Bitmap::readGrayBitmap(const char *file)
     /// Seek to the position of image data.
     status = fseek(fp, offset, SEEK_SET);
     status = fread(bmpData, sizeof(unsigned char), bmpSize, fp);
-    bmpSize = status > 0 ? status : bmpSize;
+    //bmpSize = status > 0 ? status : bmpSize;
 
     fclose(fp);
     return bmpData;

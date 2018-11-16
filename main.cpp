@@ -1,7 +1,7 @@
-//Name:
+//Name:			Willy Li and Adam Van Scyoc
 //Instructor:   Brygg Ullmer
 //Class:        3220
-//Date:
+//Date:			11/16/2018
 
 // Base code by Bidur Bohara (LSU) in collaboration with Brygg Ullmer
 
@@ -47,9 +47,7 @@ int main(int argc, char *argv[])
 {
 	std::clock_t start, end;
 	double duration;
-	//QCoreApplication a(argc, argv);
-	unsigned int numThreads = 1; // TODO As-is, this expects that the 2nd argument will always
-	// be the thread count (not the filename). It does no error checking
+	unsigned int numThreads;
 	const char* bmpFile;
 	if ( argc < 3) {
 		printf("Usage: %s [file] [number of threads]\n", argv[0]);
@@ -114,14 +112,12 @@ int processImage(const char* bmpFile, unsigned int numThreads) {
 			} else {
 				tiles.emplace_back(imageWidth, tileHeight, index);
 			}
+
 			tiles[index].image_unsobeled = new unsigned char[tiles[index].size];
 			tiles[index].image_sobeled = new unsigned char[tiles[index].size];
 			memcpy(&(tiles[index].image_unsobeled[0]), &data[index * tileHeight * imageWidth], tiles[index].size);
 
-			// TODO call to findEdge w/ multithreading here
 			t[index] = std::thread(findEdge, tiles[index].w, tiles[index].h, &tiles[index].image_unsobeled[0], &tiles[index].image_sobeled[0]);
-
-			// Add sobeled horizontal slice to the main output image
 
 		}
 		for (unsigned int index = 0; index < numThreads; index++) {
@@ -139,12 +135,6 @@ int processImage(const char* bmpFile, unsigned int numThreads) {
 	return 0;
 }
 
-
-// TODO make findEdge thread-safe
-/// Function that implements Sobel operator.
-/// Returns image data after applying Sobel operator to the original image.
-/// Reimplement findEdge such that it will run in a single thread
-/// and can process on a region/group of pixels
 void* findEdge(const unsigned int w, // Total width of image
                const unsigned int h, // Total height of image
                unsigned char * imageData,
@@ -152,10 +142,6 @@ void* findEdge(const unsigned int w, // Total width of image
 	int gradient_X = 0;
 	int gradient_Y = 0;
 	int value = 0;
-
-	// TODO need to make this thread safe; possibly by changing the global
-	// variable imageData and/or imageDataSobeled to a protected member variable of a class
-	// that implements thread-safety
 
 	// The FOR loop apply Sobel operator
 	// to bitmap image data in per-pixel level.

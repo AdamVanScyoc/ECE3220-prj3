@@ -8,7 +8,7 @@
 //#include <QCoreApplication>
 #include <vector>
 #include <math.h>
-#include <pthread.h>
+#include <thread>
 
 #include "cscbitmap.h"
 #include "tile.h"
@@ -16,6 +16,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+
+// Wrapper for tile:FindEdge() so that it can be passed as a function pointer to pthread_create
+void * findEdgeWrapper(Tile t);
 
 // Qt entry point!
 // Create and run a thread inside main function.
@@ -67,10 +71,13 @@ int main(int argc, char *argv[])
             }
           
            // TODO call to findEdge w/ multithreading here
-           tiles[index].findEdge(tiles[index].w, tiles[index].h,
-                   &tiles[index].image_unsobeled[0], &tiles[index].image_sobeled[0]);
+           //tiles[index].findEdge();
+           //tiles[index].newThread(tiles[index].image_unsobeled, tiles[index].image_unsobeled);
+           tiles[index].newThread(&tiles[index]);
+           
 
            // Add sobeled horizontal slice to the main output image
+           // TODO error check pthread_create
             memcpy(&outData[tiles[index].y * (tiles[index].h - 1) * tiles[index].w], &tiles[index].image_sobeled[0], tiles[index].h*tiles[index].w);
     }
 
@@ -78,6 +85,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-
 

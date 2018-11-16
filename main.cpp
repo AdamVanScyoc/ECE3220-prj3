@@ -27,7 +27,6 @@ int sobel_y[3][3] = { { 1, 2, 1},
 /// Declaration of functions.
 void* findEdge(const unsigned int w, // Total width of image
                 const unsigned int h, // Total height of image
-                const unsigned int y, // y starting point
                 unsigned char * imageData,
                 unsigned char * imageDataSobeled);
 
@@ -65,7 +64,7 @@ int main(int argc, char *argv[])
     {
             // Create vector element representing the current tile.
            tiles.emplace_back(image->bmpWidth,
-                                  (int)ceil((double)(image->bmpHeight / (int)numThreads)),
+                                (unsigned int)ceil(((double)image->bmpHeight)/((double)numThreads)),
                                   yy);
 
             // Copy pixels from this subsection of the main image to this tile.
@@ -75,33 +74,27 @@ int main(int argc, char *argv[])
             for (csy = 0; csy < tiles[index].h; csy++)
             {
                 // TODO change 640
-                memcpy(&(tiles[index].image_unsobeled[csy*640]), &data[csy*640], 640);
-               
+                if (csy == 0) 
+                    memcpy(&(tiles[index].image_unsobeled[0]), &data[0 + yy*tiles[index].h*tiles[index].w], 640);
+                else
+                    memcpy(&(tiles[index].image_unsobeled[csy*640]), &data[csy*640 + yy*tiles[index].h*tiles[index].w], 640);
             }
           
            // TODO call to findEdge w/ multithreading here
-           // TODO modify findEdge to accept a vector of pixels (i.e. image_sobeled) as argument)
-           tiles[index].image_sobeled = (unsigned char *)memset(&tiles[index].image_sobeled[0], 0, tiles[index].size);
-           findEdge(tiles[index].w, tiles[index].h, tiles[index].y,
+           findEdge(tiles[index].w, tiles[index].h,
                    &tiles[index].image_unsobeled[0], &tiles[index].image_sobeled[0]);
 
            // Add sobeled horizontal slice to the main output image
-           outData = (unsigned char *) memcpy(&outData[(tiles[index].y - 0) * tiles[index].h * tiles[index].w], &tiles[index].image_sobeled[0], tiles[index].h*tiles[index].w);
+            memcpy(&outData[tiles[index].y * (tiles[index].h - 1) * tiles[index].w], &tiles[index].image_sobeled[0], tiles[index].h*tiles[index].w);
 
     }
 
-    for (unsigned int index = 0; index < numThreads; index++)
-    {
-        // Stitch horizontal slices together
-        // Write image data passed as argument to a bitmap file
-        image->writeGrayBmp(tiles[index].image_sobeled);
-    }
+    image->writeGrayBmp(outData);
 
     return 0;
 }
 
 
-// TODO make findEdge work on an arbitrary tile of a larger image
 // TODO make findEdge thread-safe
 /// Function that implements Sobel operator.
 /// Returns image data after applying Sobel operator to the original image.
@@ -109,7 +102,6 @@ int main(int argc, char *argv[])
 /// and can process on a region/group of pixels
 void* findEdge(const unsigned int w, // Total width of image
                 const unsigned int h, // Total height of image
-                const unsigned int y,
                 unsigned char * imageData,
                 unsigned char * imageDataSobeled)
                 //std::vector<unsigned char> image_unsobeled,
@@ -125,9 +117,6 @@ void* findEdge(const unsigned int w, // Total width of image
     
     // The FOR loop apply Sobel operator
     // to bitmap image data in per-pixel level.
-
-//    for(unsigned int y = starty + 1; y < starty + h-1; ++y)
-//        for(unsigned int x = startx + 1; x < startx + w-1; ++x)
     for(unsigned int y = 1; y < h-1; ++y)
         for(unsigned int x = 1; x < w-1; ++x)
         {
